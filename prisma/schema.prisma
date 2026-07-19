@@ -1,0 +1,205 @@
+// =============================================================================
+// Real Estate Listing Portal — data model
+// Provider: PostgreSQL (Neon). `directUrl` is required for `prisma migrate`
+// because Neon's pooled endpoint cannot run DDL in a session.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------- Enums -----------------------------------------
+
+enum Role {
+  ADMIN
+  AGENT
+  BUYER
+}
+
+/// Moderation state of a listing. Only APPROVED listings are publicly visible.
+enum ListingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Commercial state of a listing, controlled by the agent.
+enum Availability {
+  AVAILABLE
+  UNDER_OFFER
+  SOLD
+  RENTED
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+  RESPONDED
+  CLOSED
+}
+
+// ----------------------------- Identity --------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         Role     @default(BUYER)
+  /// Admin kill-switch. Deactivated users cannot log in and their listings are
+  /// hidden from public queries.
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  agentProfile AgentProfile?
+  buyerProfile BuyerProfile?
+  properties   Property[]    @relation("AgentProperties")
+  inquiries    Inquiry[]     @relation("BuyerInquiries")
+  favorites    Favorite[]
+
+  @@index([role, isActive])
+}
+
+model AgentProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photoUrl    String?
+  company     String?
+  licenseNo   String?
+  bio         String?
+  whatsapp    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BuyerProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredCity  String?
+  budgetMin      Int?
+  budgetMax      Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ----------------------------- Taxonomy --------------------------------------
+
+model City {
+  id         String     @id @default(cuid())
+  name       String     @unique
+  slug       String     @unique
+  province   String?
+  properties Property[]
+}
+
+model PropertyType {
+  id         String     @id @default(cuid())
+  name       String     @unique // House, Apartment, Plot, Shop, Office
+  slug       String     @unique
+  properties Property[]
+}
+
+// ----------------------------- Listings --------------------------------------
+
+model Property {
+  id          String @id @default(cuid())
+  slug        String @unique
+  title       String
+  description String @db.Text
+
+  /// Stored in whole rupees as an integer. Never use Float for money.
+  price       Int
+
+  typeId      String
+  type        PropertyType @relation(fields: [typeId], references: [id])
+  cityId      String
+  city        City         @relation(fields: [cityId], references: [id])
+
+  area        String  // neighbourhood, e.g. "Bahria Town Phase 7"
+  address     String
+  bedrooms    Int     @default(0)
+  bathrooms   Int     @default(0)
+  /// Covered area in square feet.
+  sizeSqft    Int
+  parking     Int     @default(0)
+  furnished   Boolean @default(false)
+  amenities   String[] @default([])
+
+  featuredImage String?
+  isFeatured    Boolean @default(false)
+
+  status       ListingStatus @default(PENDING)
+  /// Set by an admin when a listing is rejected, shown back to the agent.
+  rejectionNote String?
+  availability Availability  @default(AVAILABLE)
+
+  agentId String
+  agent   User   @relation("AgentProperties", fields: [agentId], references: [id], onDelete: Cascade)
+
+  images    PropertyImage[]
+  inquiries Inquiry[]
+  favorites Favorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Composite indexes mirroring the public filter query.
+  @@index([status, cityId, price])
+  @@index([status, typeId])
+  @@index([status, isFeatured, createdAt])
+  @@index([agentId])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  url        String
+  /// Vercel Blob pathname — needed to delete the object when the row goes away.
+  blobPath   String?
+  alt        String?
+  sortOrder  Int      @default(0)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, sortOrder])
+}
+
+model Inquiry {
+  id         String        @id @default(cuid())
+  message    String        @db.Text
+  status     InquiryStatus @default(NEW)
+  /// Snapshot of how the buyer wants to be reached. The buyer's stored phone is
+  /// never exposed to the agent unless the buyer types it here.
+  contactPreference String?
+  buyerId    String
+  buyer      User          @relation("BuyerInquiries", fields: [buyerId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([propertyId, createdAt])
+  @@index([buyerId])
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  /// One favourite per user per property.
+  @@unique([userId, propertyId])
+}

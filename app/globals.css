@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Palette: deep pine + brass on warm paper. Chosen to read as "established
+  brokerage" rather than "startup" — the accent is used only for prices,
+  featured badges and primary actions.
+  Dark mode is the same design with the paper/ink values swapped.
+*/
+:root {
+  --paper: 250 249 246;
+  --surface: 255 255 255;
+  --line: 226 223 214;
+  --ink: 20 27 30;
+  --muted: 106 114 118;
+  --brand: 11 110 95;
+  --brand-dark: 7 78 68;
+  --accent: 176 132 45;
+  --danger: 185 47 47;
+  --success: 22 128 87;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", monospace;
+}
+
+.dark {
+  --paper: 13 17 18;
+  --surface: 22 28 30;
+  --line: 44 53 56;
+  --ink: 236 239 238;
+  --muted: 148 158 160;
+  --brand: 45 168 148;
+  --brand-dark: 30 130 114;
+  --accent: 214 174 92;
+  --danger: 232 106 106;
+  --success: 66 176 130;
+}
+
+* { border-color: rgb(var(--line)); }
+
+body {
+  background: rgb(var(--paper));
+  color: rgb(var(--ink));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keyboard focus stays visible everywhere; pointer focus does not. */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  .container-page { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
+  .card { @apply rounded-xl border border-line bg-surface shadow-card; }
+  .label { @apply block text-sm font-medium text-ink mb-1.5; }
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink
+           placeholder:text-muted focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20;
+  }
+  .field-error { @apply mt-1 text-xs text-danger; }
+}
