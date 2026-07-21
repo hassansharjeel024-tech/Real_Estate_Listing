@@ -19,6 +19,7 @@ export async function uploadImage(file: File, folder = "properties") {
   const blob = await put(`${folder}/${file.name}`, file, {
     access: "public",
     addRandomSuffix: true,
+    token: process.env.UPLOADS_READ_WRITE_TOKEN,
   });
   return { url: blob.url, blobPath: blob.pathname };
 }
