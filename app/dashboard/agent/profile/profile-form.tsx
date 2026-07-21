@@ -1,12 +1,14 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AvatarUploader } from "@/components/dashboard/avatar-uploader";
 import { updateAgentProfile } from "@/actions/profile";
 import type { AgentProfileInput } from "@/lib/validations";
 
 /** Progressive-enhancement form: works with `useActionState`, no client fetch. */
 export function ProfileForm({ initial }: { initial: AgentProfileInput }) {
   const [state, action, pending] = useActionState(updateAgentProfile, null);
+  const [photoUrl, setPhotoUrl] = useState(initial.photoUrl ?? "");
 
   return (
     <form action={action} className="card space-y-4 p-6">
@@ -17,6 +19,12 @@ export function ProfileForm({ initial }: { initial: AgentProfileInput }) {
           {state.message}
         </p>
       )}
+
+      <div>
+        <label className="label">Photo</label>
+        <AvatarUploader value={photoUrl} onChange={setPhotoUrl} />
+        <input type="hidden" name="photoUrl" value={photoUrl} />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -38,11 +46,6 @@ export function ProfileForm({ initial }: { initial: AgentProfileInput }) {
         <div>
           <label className="label" htmlFor="whatsapp">WhatsApp</label>
           <input id="whatsapp" name="whatsapp" className="input" defaultValue={initial.whatsapp ?? ""} />
-        </div>
-        <div>
-          <label className="label" htmlFor="photoUrl">Photo URL</label>
-          <input id="photoUrl" name="photoUrl" type="url" className="input" defaultValue={initial.photoUrl ?? ""}
-            placeholder="https://…" />
         </div>
       </div>
 
