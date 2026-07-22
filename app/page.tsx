@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import { ArrowRight, Building2 } from "lucide-react";
 import { PropertyCard } from "@/components/property/property-card";
@@ -38,40 +39,53 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="border-b border-line bg-surface">
-        <div className="container-page py-16 sm:py-24">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-            {counts.toLocaleString()} listings · reviewed before publishing
-          </p>
-          <h1 className="mt-4 max-w-3xl font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
-            Every property on this page has been checked by a person.
-          </h1>
-          <p className="mt-4 max-w-xl text-muted">
-            Search by city, price and size. Message the agent without handing over
-            your phone number.
-          </p>
+      <section className="border-b border-line bg-surface overflow-hidden">
+        <div className="container-page flex flex-col items-center gap-10 py-16 sm:py-24 lg:flex-row lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand">
+              {counts.toLocaleString()} listings · reviewed before publishing
+            </p>
+            <h1 className="mt-4 font-display text-4xl leading-[1.05] tracking-tight sm:text-6xl">
+              Every property on this page has been checked by a person.
+            </h1>
+            <p className="mt-4 max-w-xl text-muted">
+              Search by city, price and size. Message the agent without handing over
+              your phone number.
+            </p>
 
-          <form action="/properties" className="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
-            <input
-              name="q"
-              placeholder="Try “Bahria Town” or “3 bed apartment”"
-              aria-label="Search listings"
-              className="input h-12 flex-1"
+            <form action="/properties" className="mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row">
+              <input
+                name="q"
+                placeholder="Try “Bahria Town” or “3 bed apartment”"
+                aria-label="Search listings"
+                className="input h-12 flex-1"
+              />
+              <select name="city" aria-label="City" className="input h-12 sm:w-44">
+                <option value="">Any city</option>
+                {cities.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+              </select>
+              <Button type="submit" size="lg">Search</Button>
+            </form>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {cities.slice(0, 6).map((city) => (
+                <Link key={city.id} href={`/properties?city=${city.slug}`}
+                  className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:border-brand hover:text-brand">
+                  {city.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="hidden shrink-0 lg:block lg:-mr-8 xl:-mr-16">
+            <Image
+              src="/hero-illustration.png"
+              alt="Illustration of house search"
+              width={750}
+              height={600}
+              priority
+              className="animate-float"
             />
-            <select name="city" aria-label="City" className="input h-12 sm:w-44">
-              <option value="">Any city</option>
-              {cities.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
-            </select>
-            <Button type="submit" size="lg">Search</Button>
-          </form>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            {cities.slice(0, 6).map((city) => (
-              <Link key={city.id} href={`/properties?city=${city.slug}`}
-                className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:border-brand hover:text-brand">
-                {city.name}
-              </Link>
-            ))}
           </div>
         </div>
       </section>
